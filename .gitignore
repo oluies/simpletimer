@@ -1,11 +1,22 @@
-.project
-.classpath
+# sbt
 target/
+project/target/
+project/project/
+project/build/
+project/boot/
 lib_managed/
 src_managed/
-project/boot/
-project/build/target/
-project/plugins/target/
-project/plugins/lib_managed/
-project/plugins/src_managed/b_managed/
 
+# IDE
+.idea/
+.idea_modules/
+.bsp/
+.metals/
+.bloop/
+.vscode/
+.project
+.classpath
+.settings/
+
+# OS
+.DS_Store
