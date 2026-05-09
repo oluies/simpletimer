@@ -1,101 +1,50 @@
 package com.programmera.timer
 
-import collection.immutable.HashMap
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 
-
-trait UsingTimer {
-  def withTimer[T](name: String)(f: => T): T = {
+trait UsingTimer:
+  def withTimer[T](name: String)(f: => T): T =
     Timer(name).invoke(f)
-  }
-}
 
-object Timer {
-  /**
-   * timers
-   */
-  private var timerMap = HashMap[String, Timer]()
+object Timer:
+  private val timerMap = ConcurrentHashMap[String, Timer]()
 
-  /**
-   * factory method
-   * creates a new timer with a given name
-   *
-   * @param name id of the new timer
-   */
-  def addTimer(name: String): Unit = {
-    timerMap.get(name) match {
-      case None => timerMap += ((name, new TimerImpl()))
-      case Some(x) => throw new IllegalArgumentException("Timer " + name + " already created")
-   }
-  }
+  /** Register a new timer under `name`. Throws if one already exists. */
+  def addTimer(name: String): Unit =
+    val previous = timerMap.putIfAbsent(name, new TimerImpl())
+    if previous != null then
+      throw new IllegalArgumentException(s"Timer $name already created")
 
-   def consumedTime(name: String): Long = {
-      timerMap.get(name) match {
-      	case Some(x) => x.consumedTime
-      	case None => throw new IllegalArgumentException("Timer " + name + " not avaliable")
-    }
-   }
+  /** Nanoseconds consumed by the most recent invocation of `name`. */
+  def consumedTime(name: String): Long =
+    lookup(name).consumedTime
 
-  /**
-   * Retrieve specific timer via apply method
-   *
-   * @param name  id of the Timer
-   * @return Timer with id 
-   */
-  private[timer] def apply(name: String): Timer = {
-    timerMap.get(name) match {
-      case Some(x) => x
-      case None => throw new java.lang.IllegalArgumentException("Timer " + name + " not avaliable")
-    }
-  }
+  private[timer] def apply(name: String): Timer = lookup(name)
 
-  }
+  private[timer] def reset(): Unit = timerMap.clear()
 
- private[timer] trait Timer {
+  private def lookup(name: String): Timer =
+    timerMap.get(name) match
+      case null => throw new IllegalArgumentException(s"Timer $name not available")
+      case t    => t
 
-	   /**
-	   * @return Long nanoseconds timer
-	   */
-	  def consumedTime: Long
+private[timer] trait Timer:
+  def consumedTime: Long
+  def invoke[T](f: => T): T
 
-	  /**
-	   * function scope
-	   */
-	  def invoke[T](f: => T): T
-}
+private[timer] class TimerImpl extends Timer:
+  private val _consumedTime = new AtomicLong
 
-/**
- * Timer implementation class
- *
- */
-private[timer] class TimerImpl extends Timer
-{
-  private var _consumedTime = new AtomicLong
+  def consumedTime: Long = _consumedTime.get
 
-  private def consumedTime_=(l: Long) {
-    _consumedTime.set(l)
-  }
-  def consumedTime = _consumedTime.get
-
-  def invoke[T](f: => T): T = {
+  def invoke[T](f: => T): T =
     val start = System.nanoTime()
-
-    def calcConsumedTime: Unit = {
-      val end = System.nanoTime()
-      consumedTime = end - start
-    }
-
-    try {
+    try
       val ret = f
-      calcConsumedTime
+      _consumedTime.set(System.nanoTime() - start)
       ret
-    }
-    catch {
-      case e: Throwable => {
-        calcConsumedTime
+    catch
+      case e: Throwable =>
+        _consumedTime.set(System.nanoTime() - start)
         throw e
-      }
-    }
-  }
-}
-
