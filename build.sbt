@@ -1,4 +1,4 @@
-ThisBuild / scalaVersion := "3.3.4"
+ThisBuild / scalaVersion := "3.3.8"
 ThisBuild / organization := "com.programmera"
 ThisBuild / version      := "1.1.0"
 
