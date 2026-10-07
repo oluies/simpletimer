@@ -5,6 +5,6 @@ ThisBuild / version      := "1.1.0"
 lazy val root = (project in file("."))
   .settings(
     name := "simpletimer",
-    libraryDependencies += "org.scalameta" %% "munit" % "1.0.2" % Test,
+    libraryDependencies += "org.scalameta" %% "munit" % "1.3.6" % Test,
     scalacOptions ++= Seq("-deprecation", "-feature", "-Wunused:all")
   )
