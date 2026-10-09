@@ -12,10 +12,10 @@ jobs:
       matrix:
         java: ['17', '21']
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up JDK ${{ matrix.java }}
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: ${{ matrix.java }}
@@ -24,5 +24,12 @@ jobs:
       - name: Set up sbt
         uses: sbt/setup-sbt@v1
 
+      # `testFull`, not `test`: under sbt 2 the `test` task delegates to
+      # `testQuick` semantics, so with a warm action cache -- which `cache: sbt`
+      # above restores -- it runs only what changed and can report success
+      # having executed no tests at all. `testFull` always runs the suite.
+      #
+      # Quoted and semicolon-joined, because sbt 2 parses all its arguments as a
+      # single command line: `sbt compile testFull` is a parse error.
       - name: Compile and test
-        run: sbt -v "compile; test"
+        run: sbt -v "compile; testFull"
